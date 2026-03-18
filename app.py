@@ -2,9 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Quiz: Mulheres de Destaque na TI", page_icon="💻")
 
-st.title("💻 Quiz: Mulheres de Destaque na TI")
-st.write("Responda às 5 perguntas e veja sua pontuação no final.")
-
+# Lista de perguntas
 perguntas = [
     {
         "pergunta": "1) Quem é frequentemente reconhecida como a primeira programadora da história?",
@@ -58,36 +56,79 @@ perguntas = [
     }
 ]
 
-with st.form("quiz_form"):
-    respostas_usuario = []
+# Inicialização do estado da sessão
+if "indice_pergunta" not in st.session_state:
+    st.session_state.indice_pergunta = 0
 
-    for i, item in enumerate(perguntas):
-        resposta = st.radio(
-            item["pergunta"],
-            item["opcoes"],
-            key=f"pergunta_{i}"
-        )
-        respostas_usuario.append(resposta)
+if "pontuacao" not in st.session_state:
+    st.session_state.pontuacao = 0
 
-    enviar = st.form_submit_button("Ver resultado")
+if "respostas_usuario" not in st.session_state:
+    st.session_state.respostas_usuario = []
 
-if enviar:
-    pontuacao = 0
+if "quiz_finalizado" not in st.session_state:
+    st.session_state.quiz_finalizado = False
 
-    for i in range(len(perguntas)):
-        if respostas_usuario[i] == perguntas[i]["resposta_correta"]:
-            pontuacao += 1
 
-    st.subheader(f"✅ Sua pontuação foi: {pontuacao} de {len(perguntas)}")
+# Função para reiniciar o quiz
+def reiniciar_quiz():
+    st.session_state.indice_pergunta = 0
+    st.session_state.pontuacao = 0
+    st.session_state.respostas_usuario = []
+    st.session_state.quiz_finalizado = False
 
-    if pontuacao == 5:
-        st.success("Excelente! Você acertou todas as perguntas! 🎉")
-    elif pontuacao >= 3:
-        st.info("Muito bom! Você conhece bem a história das mulheres na TI. 👏")
+
+st.title("💻 Quiz: Mulheres de Destaque na TI")
+
+# Se o quiz ainda não terminou
+if not st.session_state.quiz_finalizado:
+    indice = st.session_state.indice_pergunta
+    pergunta_atual = perguntas[indice]
+
+    st.subheader(f"Pergunta {indice + 1} de {len(perguntas)}")
+    st.write(pergunta_atual["pergunta"])
+
+    resposta = st.radio(
+        "Escolha uma alternativa:",
+        pergunta_atual["opcoes"],
+        key=f"resposta_{indice}"
+    )
+
+    if st.button("Próxima"):
+        st.session_state.respostas_usuario.append(resposta)
+
+        if resposta == pergunta_atual["resposta_correta"]:
+            st.session_state.pontuacao += 1
+
+        st.session_state.indice_pergunta += 1
+
+        if st.session_state.indice_pergunta >= len(perguntas):
+            st.session_state.quiz_finalizado = True
+
+        st.rerun()
+
+# Se o quiz terminou
+else:
+    st.success("Quiz finalizado!")
+    st.subheader(
+        f"Sua pontuação foi: {st.session_state.pontuacao} de {len(perguntas)}"
+    )
+
+    if st.session_state.pontuacao == 5:
+        st.balloons()
+        st.write("Excelente! Você acertou tudo! 🎉")
+    elif st.session_state.pontuacao >= 3:
+        st.write("Muito bom! Você conhece bem a história das mulheres na TI. 👏")
     else:
-        st.warning("Você pode aprender ainda mais sobre mulheres de destaque na TI! 🚀")
+        st.write("Continue estudando, você pode aprender ainda mais! 🚀")
 
     st.write("### Gabarito")
-    for item in perguntas:
+    for i, item in enumerate(perguntas):
         st.write(f"**{item['pergunta']}**")
+        st.write(f"Sua resposta: {st.session_state.respostas_usuario[i]}")
         st.write(f"Resposta correta: {item['resposta_correta']}")
+        st.write("---")
+
+    if st.button("Reiniciar Quiz"):
+        reiniciar_quiz()
+        st.rerun()
